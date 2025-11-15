@@ -209,3 +209,21 @@ _logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Data directories
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+network_monitor.log
+
+# Environment
+.env
+
+# Backups
+*.backup
+*.bak
