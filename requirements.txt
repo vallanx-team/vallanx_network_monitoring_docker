@@ -15,14 +15,15 @@ scapy==2.5.0
 # System monitoring
 psutil==5.9.8
 
-# Database drivers
-mysql-connector-python==8.4.0
-PyMySQL==1.1.1
-psycopg2-binary==2.9.9
+# Database drivers (OPTIONAL - SQLite is built-in)
+# Only install if you need MySQL/PostgreSQL support:
+# mysql-connector-python==8.4.0
+# PyMySQL==1.1.1
+# psycopg2-binary==2.9.9
 
-# Data processing
-pandas==2.2.2
-numpy==1.26.4
+# Data processing (OPTIONAL - for advanced features)
+# pandas==2.2.2
+# numpy==1.26.4
 
 # Configuration
 PyYAML==6.0.1
@@ -41,8 +42,11 @@ python-dateutil==2.9.0
 # System utilities
 netifaces==0.11.0
 
-# Cryptography
-cryptography==42.0.8
+# Cryptography (OPTIONAL - for SSL features)
+# cryptography==42.0.8
 
 # Domain extraction
 tldextract==5.1.2
+
+# NOTE: For standalone version with minimal dependencies,
+#       use requirements-standalone.txt instead
