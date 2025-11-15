@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vallanx Network Monitor - Dashboard</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <h1>Vallanx Network Monitor</h1>
+                </div>
+                <div class="header-status">
+                    <span class="status-indicator" id="connectionStatus">
+                        <i class="fas fa-circle"></i> Verbunden
+                    </span>
+                    <span class="uptime" id="uptime">
+                        <i class="far fa-clock"></i> Uptime: 0s
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="#dashboard" data-tab="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#traffic" data-tab="traffic">
+                        <i class="fas fa-network-wired"></i> Traffic
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#threats" data-tab="threats">
+                        <i class="fas fa-exclamation-triangle"></i> Threats
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#vallanx" data-tab="vallanx">
+                        <i class="fas fa-ban"></i> Vallanx Blocklist
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#blacklist" data-tab="blacklist">
+                        <i class="fas fa-list"></i> Black/Whitelist
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#statistics" data-tab="statistics">
+                        <i class="fas fa-chart-bar"></i> Statistiken
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#settings" data-tab="settings">
+                        <i class="fas fa-cog"></i> Einstellungen
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <h2 class="section-title">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard Übersicht
+                </h2>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-ethernet"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalPackets">0</h3>
+                            <p>Packets</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalBytes">0 B</h3>
+                            <p>Traffic</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalThreats">0</h3>
+                            <p>Threats</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalBlocked">0</h3>
+                            <p>Geblockt</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-line"></i> Traffic Over Time</h3>
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie"></i> Traffic Direction</h3>
+                        <canvas id="directionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="activity-section">
+                    <h3><i class="fas fa-history"></i> Recent Packets</h3>
+                    <div class="table-responsive">
+                        <table class="data-table" id="recentPacketsTable">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Source IP</th>
+                                    <th>Destination IP</th>
+                                    <th>Protocol</th>
+                                    <th>Size</th>
+                                    <th>Direction</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentPackets">
+                                <tr>
+                                    <td colspan="6" class="no-data">Warte auf Daten...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Tab -->
+            <div id="traffic-tab" class="tab-content">
+                <h2 class="section-title">
+                    <i class="fas fa-network-wired"></i> Network Traffic
+                </h2>
+                
+                <!-- Traffic Filters -->
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label>Protocol:</label>
+                        <select id="protocolFilter">
+                            <option value="all">Alle</option>
+                            <option value="TCP">TCP</option>
+                            <option value="UDP">UDP</option>
+                            <option value="ICMP">ICMP</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Direction:</label>
+                        <select id="directionFilter">
+                            <option value="all">Alle</option>
+                            <option value="inbound">Inbound</option>
+                            <option value="outbound">Outbound</option>
+                            <option value="internal">Internal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> Filter anwenden
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Traffic Table -->
+                <div class="table-responsive">
+                    <table class="data-table" id="trafficTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Source</th>
+                                <th>Destination</th>
+                                <th>Protocol</th>
+                                <th>Application</th>
+                                <th>Bytes</th>
+                                <th>Packets</th>
+                                <th>Direction</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trafficData">
+                            <tr>
+                                <td colspan="8" class="no-data">Keine Traffic-Daten verfügbar</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Threats Tab -->
+            <div id="threats-tab" class="tab-content">
+                <h2 class="section-title">
+                    <i class="fas fa-exclamation-triangle"></i> Threat Detection
+                </h2>
+
+                <!-- Threat Alerts -->
+                <div id="threatAlerts" class="alerts-container">
+                    <div class="alert-placeholder">
+                        <i class="fas fa-shield-alt"></i>
+                        <p>Keine aktuellen Threats erkannt</p>
+                    </div>
+                </div>
+
+                <!-- Suricata Alerts -->
+                <div class="suricata-section">
+                    <h3><i class="fas fa-bell"></i> Suricata IDS Alerts</h3>
+                    <div class="table-responsive">
+                        <table class="data-table" id="suricataTable">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Signature</th>
+                                    <th>Source IP</th>
+                                    <th>Destination IP</th>
+                                    <th>Category</th>
+                                    <th>Severity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suricataAlerts">
+                                <tr>
+                                    <td colspan="7" class="no-data">Keine Suricata Alerts</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vallanx Tab -->
+            <div id="vallanx-tab" class="tab-content">
+                <h2 class="section-title">
+                    <i class="fas fa-ban"></i> Vallanx Universal Blocklist
+                </h2>
+
+                <!-- Vallanx Stats -->
+                <div class="vallanx-stats">
+                    <div class="stat-card">
+                        <h4>Total Entries</h4>
+                        <p id="vallanxTotal">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>IPs</h4>
+                        <p id="vallanxIPs">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Domains</h4>
+                        <p id="vallanxDomains">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>URLs</h4>
+                        <p id="vallanxURLs">0</p>
+                    </div>
+                </div>
+
+                <!-- Add Entry Form -->
+                <div class="form-section">
+                    <h3><i class="fas fa-plus"></i> Neuen Entry hinzufügen</h3>
+                    <form id="vallanxAddForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Value:</label>
+                                <input type="text" id="vallanxValue" placeholder="192.0.2.1" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Type:</label>
+                                <select id="vallanxType" required>
+                                    <option value="ip">IP Address</option>
+                                    <option value="domain">Domain</option>
+                                    <option value="url">URL</option>
+                                    <option value="cidr">CIDR</option>
+                                    <option value="hash">Hash</option>
+                                    <option value="email">Email</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Category:</label>
+                                <select id="vallanxCategory" required>
+                                    <option value="malware">Malware</option>
+                                    <option value="phishing">Phishing</option>
+                                    <option value="ransomware">Ransomware</option>
+                                    <option value="botnet">Botnet</option>
+                                    <option value="command_control">C2</option>
+                                    <option value="spam">Spam</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Severity:</label>
+                                <select id="vallanxSeverity" required>
+                                    <option value="5">Critical (5)</option>
+                                    <option value="4">High (4)</option>
+                                    <option value="3" selected>Medium (3)</option>
+                                    <option value="2">Low (2)</option>
+                                    <option value="1">Info (1)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Action:</label>
+                                <select id="vallanxAction" required>
+                                    <option value="block" selected>Block</option>
+                                    <option value="monitor">Monitor</option>
+                                    <option value="alert">Alert</option>
+                                    <option value="allow">Allow</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Tags (comma-separated):</label>
+                                <input type="text" id="vallanxTags" placeholder="zeus,trojan">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Entry hinzufügen
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Search -->
+                <div class="search-section">
+                    <h3><i class="fas fa-search"></i> Blocklist durchsuchen</h3>
+                    <div class="search-bar">
+                        <input type="text" id="vallanxSearch" placeholder="IP, Domain, URL suchen...">
+                        <button class="btn btn-secondary" onclick="searchVallanx()">
+                            <i class="fas fa-search"></i> Suchen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="table-responsive">
+                    <table class="data-table" id="vallanxTable">
+                        <thead>
+                            <tr>
+                                <th>Value</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Severity</th>
+                                <th>Action</th>
+                                <th>Hit Count</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vallanxEntries">
+                            <tr>
+                                <td colspan="7" class="no-data">Keine Einträge</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Blacklist/Whitelist Tab -->
+            <div id="blacklist-tab" class="tab-content">
+                <h2 class="section-title">
+                    <i class="fas fa-list"></i> Blacklist & Whitelist Management
+                </h2>
+
+                <div class="list-management">
+                    <!-- Blacklist Section -->
+                    <div class="list-section">
+                        <h3><i class="fas fa-ban"></i> Blacklist</h3>
+                        
+                        <!-- Add to Blacklist -->
+                        <div class="add-form">
+                            <input type="text" id="blacklistInput" placeholder="IP oder Domain">
+                            <button class="btn btn-danger" onclick="addToBlacklist()">
+                                <i class="fas fa-plus"></i> Hinzufügen
+                            </button>
+                        </div>
+
+                        <!-- Blacklist Items -->
+                        <div class="list-items">
+                            <h4>IPs (<span id="blacklistIPCount">0</span>)</h4>
+                            <ul id="blacklistIPs" class="item-list">
+                                <li class="no-items">Keine IPs</li>
+                            </ul>
+
+                            <h4>Domains (<span id="blacklistDomainCount">0</span>)</h4>
+                            <ul id="blacklistDomains" class="item-list">
+                                <li class="no-items">Keine Domains</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Whitelist Section -->
+                    <div class="list-section">
+                        <h3><i class="fas fa-check-circle"></i> Whitelist</h3>
+                        
+                        <!-- Add to Whitelist -->
+                        <div class="add-form">
+                            <input type="text" id="whitelistInput" placeholder="IP oder Domain">
+                            <button class="btn btn-success" onclick="addToWhitelist()">
+                                <i class="fas fa-plus"></i> Hinzufügen
+                            </button>
+                        </div>
+
+                        <!-- Whitelist Items -->
+                        <div class="list-items">
+                            <h4>IPs (<span id="whitelistIPCount">0</span>)</h4>
+                            <ul id="whitelistIPs" class="item-list">
+                                <li class="no-items">Keine IPs</li>
+                            </ul>
+
+                            <h4>Domains (<span id="whitelistDomainCount">0</span>)</h4>
+                            <ul id="whitelistDomains" class="item-list">
+                                <li class="no-items">Keine Domains</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div id="statistics-tab" class="tab-content">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i> Statistiken & Berichte
+                </h2>
+
+                <!-- Time Range Selector -->
+                <div class="time-selector">
+                    <button class="btn btn-sm" onclick="loadStats(1)">1h</button>
+                    <button class="btn btn-sm" onclick="loadStats(6)">6h</button>
+                    <button class="btn btn-sm active" onclick="loadStats(24)">24h</button>
+                    <button class="btn btn-sm" onclick="loadStats(168)">7d</button>
+                    <button class="btn btn-sm" onclick="loadStats(720)">30d</button>
+                </div>
+
+                <!-- Statistics Grid -->
+                <div class="stats-detailed">
+                    <div class="chart-card">
+                        <h3>Protocol Distribution</h3>
+                        <canvas id="protocolChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <h3>Top Talkers</h3>
+                        <canvas id="talkersChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <h3>Threat Categories</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <h3>Blocked vs Allowed</h3>
+                        <canvas id="blockedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <h2 class="section-title">
+                    <i class="fas fa-cog"></i> Einstellungen
+                </h2>
+
+                <div class="settings-section">
+                    <h3>Monitoring Einstellungen</h3>
+                    
+                    <div class="setting-item">
+                        <label>Network Interface:</label>
+                        <input type="text" id="interfaceSetting" value="eth0">
+                        <button class="btn btn-sm btn-secondary" onclick="updateInterface()">
+                            <i class="fas fa-save"></i> Speichern
+                        </button>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Auto-Block Threshold:</label>
+                        <select id="autoBlockSeverity">
+                            <option value="3">Medium (3)</option>
+                            <option value="4" selected>High (4)</option>
+                            <option value="5">Critical (5)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Update Interval (seconds):</label>
+                        <input type="number" id="updateInterval" value="10" min="1" max="60">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Export</h3>
+                    
+                    <div class="export-buttons">
+                        <button class="btn btn-primary" onclick="exportData('suricata')">
+                            <i class="fas fa-download"></i> Suricata Rules
+                        </button>
+                        <button class="btn btn-primary" onclick="exportData('iptables')">
+                            <i class="fas fa-download"></i> iptables
+                        </button>
+                        <button class="btn btn-primary" onclick="exportData('nginx')">
+                            <i class="fas fa-download"></i> Nginx
+                        </button>
+                        <button class="btn btn-primary" onclick="exportData('json')">
+                            <i class="fas fa-download"></i> JSON
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>System Info</h3>
+                    <div class="system-info">
+                        <p><strong>Version:</strong> 1.0.0</p>
+                        <p><strong>Status:</strong> <span class="badge badge-success">Running</span></p>
+                        <p><strong>Uptime:</strong> <span id="systemUptime">0s</span></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Vallanx Network Monitor | Version 1.0.0 | <a href="https://github.com/yourusername/vallanx">GitHub</a></p>
+        </div>
+    </footer>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

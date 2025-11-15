@@ -1,0 +1,263 @@
+# Docker Compose for Network Monitor with Vallanx Universal Blocklist
+# Simplified version - No Suricata dependencies
+# Vallanx handles all security rules and blocking
+
+services:
+  # Network Monitor Application with Vallanx
+  network-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: network-monitor
+    hostname: network-monitor
+    restart: unless-stopped
+    
+    # Network mode - use 'host' for direct network interface access
+    # network_mode: host
+
+    networks:
+      - monitor-network    
+
+    # Privileged mode required for packet capture and iptables
+    privileged: true
+    
+    # Alternative: Use capabilities (more secure than privileged)
+    # cap_add:
+    #   - NET_ADMIN
+    #   - NET_RAW
+    
+    environment:
+      # Application settings
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - TZ=Europe/Berlin
+      
+      # Database settings
+      - DB_TYPE=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3307
+      - DB_USER=monitor_user
+      - DB_PASSWORD=mysql_pwd
+      - DB_NAME=network_monitor
+      
+      # Vallanx settings
+      - VALLANX_BASE_PATH=/etc/vallanx
+      - VALLANX_AUTO_BLOCK=true
+      - VALLANX_CONFIDENCE_THRESHOLD=0.7
+      
+      # Monitoring settings
+      - MONITOR_INTERFACE=${MONITOR_INTERFACE:-eth0}
+      - AUTO_BLOCK_ENABLED=true
+      
+      # API settings
+      - API_PORT=5000
+      - VALLANX_API_PORT=8089
+      - SOCKETIO_CORS_ALLOWED_ORIGINS=*
+    
+    volumes:
+      # Application data
+      # - ./app:/app:ro
+      # - ./templates:/app/templates:ro
+      # - ./static:/app/static:ro
+      
+      # Configuration
+      # Wenn Sie die db-credentials.json ÄNDERN möchten, müssen Sie das Image neu bauen (nicht mounten)
+      # - ./config/db-credentials.json:/etc/network-monitor/db-credentials.json:ro
+      
+      # Persistent data
+      - monitor-logs:/var/log/network-monitor
+      - monitor-data:/var/lib/network-monitor
+      - monitor-backups:/var/backups/network-monitor
+      
+      # Vallanx data
+      - vallanx-data:/etc/vallanx
+      - vallanx-feeds:/etc/vallanx/feeds
+    
+    ports:
+      # Web interface (only needed if not using host network mode)
+      - "5000:5000"
+      # Vallanx API
+      - "8089:8089"
+    
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    labels:
+      - "com.network-monitor.description=Network Traffic Monitor with Vallanx Universal Blocklist"
+      - "com.network-monitor.version=2.0.0-vallanx-only"
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: network-monitor-mysql
+    restart: unless-stopped
+    
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql_root_pwd
+      - MYSQL_DATABASE=network_monitor
+      - MYSQL_USER=monitor_user
+      - MYSQL_PASSWORD=mysql_pwd
+      - TZ=Europe/Berlin
+    
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./config/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mysql-backups:/backups
+    
+    ports:
+      - "3307:3307"
+    
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max-connections=200
+      - --innodb-buffer-pool-size=256M
+    
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password_change_me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    networks:
+      - monitor-network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PostgreSQL Database (alternative - optional profile)
+  postgres:
+    image: postgres:16-alpine
+    container_name: network-monitor-postgres
+    restart: unless-stopped
+    profiles:
+      - postgres
+    
+    environment:
+      - POSTGRES_DB=network_monitor
+      - POSTGRES_USER=monitor_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password_change_me}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - TZ=Europe/Berlin
+    
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    
+    ports:
+      - "5432:5432"
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monitor_user -d network_monitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    networks:
+      - monitor-network
+
+  # Redis for caching (optional profile)
+  redis:
+    image: redis:7-alpine
+    container_name: network-monitor-redis
+    restart: unless-stopped
+    profiles:
+      - cache
+    
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    
+    volumes:
+      - redis-data:/data
+    
+    ports:
+      - "6379:6379"
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    networks:
+      - monitor-network
+
+  # Grafana for visualization (optional profile)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: network-monitor-grafana
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+    
+    ports:
+      - "3000:3000"
+    
+    depends_on:
+      - mysql
+    
+    networks:
+      - monitor-network
+
+# Networks
+networks:
+  monitor-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# Volumes
+volumes:
+  # Application volumes
+  monitor-logs:
+    driver: local
+  monitor-data:
+    driver: local
+  monitor-backups:
+    driver: local
+  
+  # Vallanx volumes
+  vallanx-data:
+    driver: local
+  vallanx-feeds:
+    driver: local
+  
+  # Database volumes
+  mysql-data:
+    driver: local
+  mysql-backups:
+    driver: local
+  postgres-data:
+    driver: local
+  
+  # Cache and monitoring
+  redis-data:
+    driver: local
+  grafana-data:
+    driver: local

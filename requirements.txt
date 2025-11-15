@@ -1,0 +1,48 @@
+# Network Monitor with Vallanx - Complete Requirements
+
+# Core Web Framework
+Flask==3.0.3
+flask-socketio==5.3.6
+python-socketio==5.11.2
+
+# Async/Event handling
+eventlet==0.36.1
+greenlet==3.0.3
+
+# Network packet capture and analysis
+scapy==2.5.0
+
+# System monitoring
+psutil==5.9.8
+
+# Database drivers
+mysql-connector-python==8.4.0
+PyMySQL==1.1.1
+psycopg2-binary==2.9.9
+
+# Data processing
+pandas==2.2.2
+numpy==1.26.4
+
+# Configuration
+PyYAML==6.0.1
+python-dotenv==1.0.1
+
+# HTTP requests (for threat feeds)
+requests==2.32.3
+urllib3==2.2.2
+
+# DNS utilities
+dnspython==2.6.1
+
+# Date/Time utilities
+python-dateutil==2.9.0
+
+# System utilities
+netifaces==0.11.0
+
+# Cryptography
+cryptography==42.0.8
+
+# Domain extraction
+tldextract==5.1.2

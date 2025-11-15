@@ -1,0 +1,201 @@
+# Vallanx Universal Blocklist Format - Example File
+# Format: type:value|category|severity|action|tags|metadata
+# 
+# Types: ip, domain, url, email, hash, cidr, asn, regex, wildcard, tld, port, protocol, user_agent, ssl_fingerprint, ja3, ja3s
+# Categories: malware, phishing, ransomware, botnet, command_control, cryptominer, exploit, spam, scam, pup, adware, tracking, pornography, gambling, piracy, drugs, violence, hate_speech, ddos, apt
+# Severity: 1-5 (1=info, 2=low, 3=medium, 4=high, 5=critical)
+# Actions: block, allow, monitor, redirect, quarantine, alert, log, rate_limit, challenge, sandbox
+#
+# Generated: 2024-01-15T10:00:00Z
+# Version: 1.0.0
+
+# ===== IP ADDRESSES =====
+
+# Known malware C2 servers
+ip:192.0.2.1|malware|5|block|zeus,trojan|{"source":"threatfeed1","confidence":0.95,"first_seen":"2024-01-01"}
+ip:198.51.100.5|botnet|4|block|mirai|{"source":"honeypot","country":"XX","asn":"AS12345"}
+ip:203.0.113.10|phishing|4|block|phishing_kit|{"target":"banking","campaign":"phish2024"}
+
+# Ransomware infrastructure
+ip:192.0.2.20|ransomware|5|block|wannacry,locky|{"source":"incident_response","confirmed":true}
+ip:198.51.100.30|ransomware|5|block|ryuk|{"source":"threatfeed2","ioc":"IR-2024-001"}
+
+# Cryptominer IPs
+ip:203.0.113.50|cryptominer|3|monitor|coinhive|{"source":"network_analysis","mining_pool":"monero"}
+
+# ===== CIDR RANGES =====
+
+# Malicious hosting provider
+cidr:192.0.2.0/24|malware|4|block|malware_hosting|{"asn":"AS12345","hosting_provider":"BadHost Inc"}
+
+# Known botnet ranges
+cidr:198.51.100.0/24|botnet|5|block|botnet_c2|{"botnet_family":"mirai","country":"XX"}
+cidr:203.0.113.0/24|spam|3|block|spam_network|{"spam_reports":1500}
+
+# ===== DOMAINS =====
+
+# Malware distribution
+domain:evil-malware.com|malware|5|block|emotet,trickbot|{"dga":false,"registrar":"BadRegistrar"}
+domain:malicious-downloads.net|malware|5|block|dropper|{"file_types":["exe","dll","scr"]}
+
+# Phishing sites
+domain:fake-bank-login.com|phishing|4|block|credential_harvesting|{"target":"chase_bank","kit_version":"2.3"}
+domain:microsoft-update-now.org|phishing|4|block|tech_support_scam|{"impersonates":"microsoft"}
+domain:paypal-verify-account.info|phishing|5|block|payment_fraud|{"target":"paypal","active":true}
+
+# Command & Control
+domain:c2-server.example|command_control|5|block|cobalt_strike|{"port":443,"protocol":"https"}
+domain:botnet-control.xyz|command_control|5|block|gh0st_rat|{"encryption":"xor"}
+
+# Cryptomining
+domain:coinhive-proxy.com|cryptominer|3|monitor|browser_mining|{"cryptocurrency":"monero"}
+
+# Spam & Scam
+domain:cheap-viagra-now.biz|spam|2|block|pharmacy_spam|{"category":"pharma"}
+domain:nigerian-prince-money.info|scam|3|block|419_scam|{"type":"advance_fee_fraud"}
+
+# Tracking & Adware
+domain:aggressive-tracker.com|tracking|2|monitor|analytics|{"third_party":true}
+domain:annoying-popups.net|adware|2|block|popup_ads|{"intrusive":true}
+
+# ===== WILDCARD DOMAINS =====
+
+# Block all subdomains of known malicious domains
+wildcard:*.evil-network.com|malware|5|block|malware_family|{"subdomains":"all"}
+wildcard:*.phishing-campaign.org|phishing|4|block|phishing_infrastructure|{"campaign":"2024-q1"}
+
+# Suspicious TLDs
+wildcard:*.tk|spam|2|monitor|suspicious_tld|{"free_domain":true}
+wildcard:*.ml|spam|2|monitor|suspicious_tld|{"abuse_rate":"high"}
+
+# ===== URLs =====
+
+# Direct malware downloads
+url:http://evil-malware.com/trojan.exe|malware|5|block|dropper|{"md5":"d41d8cd98f00b204e9800998ecf8427e","sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+url:https://malicious-downloads.net/payload.bin|malware|5|block|ransomware|{"family":"wannacry"}
+
+# Phishing URLs
+url:https://fake-bank-login.com/login.php|phishing|4|block|fake_login|{"target":"chase","method":"credential_theft"}
+url:http://paypal-verify-account.info/secure/verify|phishing|5|block|payment_fraud|{"ssl_cert":"invalid"}
+
+# Exploit kits
+url:http://exploit-kit.example/landing|exploit|5|block|rig_ek|{"cve":["CVE-2021-1234","CVE-2021-5678"]}
+
+# ===== EMAIL ADDRESSES =====
+
+# Known spammers
+email:spammer@evil-domain.com|spam|3|block|spam_source|{"reports":500,"campaigns":["pharma","419"]}
+email:phisher@fake-bank.net|phishing|4|block|phishing_sender|{"targets":"financial_institutions"}
+
+# Malware distribution
+email:malware-sender@evil.org|malware|5|block|emotet_distributor|{"attachment_types":["doc","xls"]}
+
+# ===== FILE HASHES =====
+
+# Known malware samples (MD5)
+hash:d41d8cd98f00b204e9800998ecf8427e|malware|5|block|known_malware|{"family":"zeus","variant":"v3"}
+hash:098f6bcd4621d373cade4e832627b4f6|malware|5|block|trojan|{"type":"banking_trojan"}
+
+# Ransomware (SHA256)
+hash:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|ransomware|5|block|wannacry|{"encryption":"aes256"}
+
+# ===== ASN =====
+
+# Malicious hosting ASNs
+asn:AS12345|malware|3|monitor|malware_hosting_asn|{"country":"XX","hosting_type":"bulletproof"}
+asn:AS67890|spam|2|rate_limit|spam_network|{"spam_score":8.5}
+
+# ===== PORTS =====
+
+# Common backdoor ports
+port:4444|exploit|4|block|metasploit_default|{"service":"meterpreter"}
+port:31337|exploit|4|block|back_orifice|{"trojan":"classic"}
+
+# IRC C2 ports
+port:6667|botnet|3|monitor|irc_c2|{"protocol":"irc"}
+
+# Cryptomining ports
+port:3333|cryptominer|3|monitor|mining_pool|{"cryptocurrency":"monero"}
+port:14444|cryptominer|3|monitor|mining_pool|{"cryptocurrency":"zcash"}
+
+# ===== USER AGENTS =====
+
+# Malicious bots
+user_agent:BadBot/1.0|bot|3|block|malicious_bot|{"purpose":"scraping"}
+user_agent:EvilScanner/2.0|bot|4|block|vulnerability_scanner|{"aggressive":true}
+
+# Hacking tools
+user_agent:sqlmap/1.0|exploit|4|block|sql_injection_tool|{"automated":true}
+user_agent:Nikto/2.1.6|exploit|3|monitor|vulnerability_scanner|{"type":"web"}
+
+# ===== REGULAR EXPRESSIONS =====
+
+# Block executable downloads
+regex:.*\.(exe|scr|pif|com|bat)$|malware|3|monitor|executable_files|{"context":"downloads"}
+
+# SQL injection patterns
+regex:(union|select|from|where).*\d+=\d+|exploit|4|block|sql_injection|{"owasp":"A1"}
+
+# XSS patterns
+regex:<script[^>]*>.*?</script>|exploit|4|block|xss_attack|{"owasp":"A7"}
+
+# Email harvesting patterns
+regex:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|privacy|2|monitor|email_extraction|{}
+
+# ===== JA3 FINGERPRINTS =====
+
+# Malware TLS fingerprints
+ja3:769,47-53-5-10-49161-49162-49171-49172-50-56-19-4,0-10-11,23-24-25,0|malware|4|block|malware_tls_fingerprint|{"family":"trickbot","version":"2024"}
+ja3:771,49195-49199-52393-52392-49196-49200-49162-49161-49171-49172,0-23-65281-10-11-35-16-5-13,29-23-24,0|botnet|4|block|botnet_tls|{"family":"emotet"}
+
+# ===== SSL FINGERPRINTS =====
+
+# Phishing certificates
+ssl_fingerprint:aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd|phishing|4|block|phishing_cert|{"cn":"*.fake-bank.com","issuer":"self-signed"}
+
+# Malicious certificate
+ssl_fingerprint:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22:33:44|malware|5|block|malware_cert|{"cn":"malware-c2.example","expired":true}
+
+# ===== SPECIAL CASES =====
+
+# Temporarily block for investigation
+ip:192.0.2.100|unknown|3|quarantine|investigation|{"ticket":"INC-2024-001","analyst":"security_team","expires":"2024-02-15"}
+
+# Monitor suspicious activity
+domain:suspicious-activity.com|unknown|2|monitor|suspicious|{"anomaly_score":7.5,"first_detected":"2024-01-14"}
+
+# Rate limit aggressive scanner
+ip:203.0.113.200|exploit|3|rate_limit|port_scanner|{"scan_rate":"1000_ports_per_second","block_duration":"3600"}
+
+# Challenge potential bot traffic
+user_agent:SuspiciousBot/1.0|bot|2|challenge|potential_bot|{"captcha_required":true}
+
+# Sandbox unknown executable
+hash:1234567890abcdef1234567890abcdef|unknown|3|sandbox|unknown_binary|{"file_type":"pe32","analysis_pending":true}
+
+# ===== END OF EXAMPLE BLOCKLIST =====
+
+# Notes:
+# - This is an example file for demonstration purposes
+# - Replace example values with real threat intelligence
+# - Regular updates recommended (daily for high-security environments)
+# - Validate entries before production use
+# - Monitor false positive rates
+# - Adjust severity and actions based on your environment
+
+# Statistics:
+# Total Entries: 67
+# - IPs: 7
+# - CIDRs: 3
+# - Domains: 13
+# - Wildcards: 4
+# - URLs: 5
+# - Emails: 3
+# - Hashes: 3
+# - ASNs: 2
+# - Ports: 5
+# - User Agents: 4
+# - Regex: 4
+# - JA3: 2
+# - SSL Fingerprints: 2
+# - Special: 5
